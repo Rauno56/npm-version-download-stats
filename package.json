@@ -1,0 +1,27 @@
+{
+  "name": "npm-version-download-stats",
+  "version": "1.0.0",
+  "description": "Fetch download stats by version from npm registry.",
+  "main": "./index.js",
+  "exports": "./index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "download",
+    "install",
+    "npm",
+    "registry",
+    "statistics",
+    "stats",
+    "versions"
+  ],
+  "node": "^12.20.0 || ^14.13.1 || >=16.0.0",
+  "author": "Rauno Viskus",
+  "license": "MIT",
+  "dependencies": {
+    "got": "^11.8.3",
+    "node-html-parser": "^5.1.0"
+  }
+}
