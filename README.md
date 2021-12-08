@@ -1,9 +1,9 @@
-# `npm-version-download-stats`
+# `nvds`
 
-An utility to fetch npm stats form the "Versions" tab.
+"npm version download stats" is an utility to fetch npm stats form the "Versions" tab.
 
 ```js
-import getStats from 'npm-version-download-stats';
+import getStats from 'nvds';
 
 const stats = await getStats('express');
 

@@ -1,5 +1,5 @@
 {
-  "name": "npm-version-download-stats",
+  "name": "nvds",
   "version": "1.0.0",
   "description": "Fetch download stats by version from npm registry.",
   "main": "./index.js",
