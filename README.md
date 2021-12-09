@@ -7,7 +7,7 @@ import getStats from 'nvds';
 
 const stats = await getStats('express');
 
-console.log(stats.length, stats.slice(0, 3));
+console.log(stats.length, stats.slice(0, 5));
 /*
 214 [
   { version: '5.0.0-alpha.8', downloads: 12150, time: 2020-03-26T00:57:02.755Z, tags: [ 'next' ] ,
