@@ -5,6 +5,22 @@ import * as util from 'util';
 import getStats, { filter } from './src/index.js';
 import { sumDownloads } from './src/utils.js';
 
+const popArg = (argv, arg) => {
+	assert(Array.isArray(argv));
+	assert.equal(typeof arg, 'string');
+	const idx = argv.indexOf(arg);
+	if (~idx) {
+		const [, value] = argv.splice(idx, 2);
+		return value;
+	}
+	return undefined;
+};
+
+const options = {
+	limit: popArg(process.argv, '--limit'),
+	min: popArg(process.argv, '--min'),
+	limitTotal: popArg(process.argv, '--limit-total'),
+};
 const [,, PACKAGE, semverRange] = process.argv;
 assert.equal(typeof PACKAGE, 'string', 'Package name required');
 
@@ -33,4 +49,4 @@ const show = (subset, totalSum) => {
 	console.log(`Total weekly downloads: ${totalSum.toLocaleString('en-US')}`);
 };
 
-show(filter(stats, { semverRange }), sum);
+show(filter(stats, { ...options, semverRange }), sum);

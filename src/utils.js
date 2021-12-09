@@ -1,5 +1,11 @@
 import { strict as assert } from 'assert';
 
+export const isStringOrNumber = (value) => {
+	if (typeof value === 'string') return true;
+	if (typeof value === 'number') return true;
+	return false;
+};
+
 export const sortByDownloads = (a, b) => {
 	return a.downloads > b.downloads ? -1 : 1;
 };

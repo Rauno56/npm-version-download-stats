@@ -4,6 +4,7 @@ import { strict as assert } from 'assert';
 import { parse } from 'node-html-parser';
 import {
 	ensurePositiveNumber,
+	isStringOrNumber,
 	limitByTotalDownloadCount,
 	parsePositiveNumber,
 	sortByDownloads,
@@ -102,10 +103,10 @@ export const filter = (stats, options = {}) => {
 	if (options?.sort ?? true) {
 		stats.sort(sortByDownloads);
 	}
-	if (options && 'limit' in options) {
+	if (isStringOrNumber(options?.limit)) {
 		stats = stats.slice(0, ensurePositiveNumber(options.limit));
 	}
-	if (options && 'limitTotal' in options) {
+	if (isStringOrNumber(options?.limitTotal)) {
 		assert(options.limitTotal.endsWith('%'), '"limitTotal" is expected to be an percentage');
 		const required = sum * parsePositiveNumber(options.limitTotal.slice(0, -1), 100) / 100;
 		stats = limitByTotalDownloadCount(stats, required);
