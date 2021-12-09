@@ -10,6 +10,15 @@ export const sumDownloads = (stats) => {
 	}, 0);
 };
 
+export const limitByTotalDownloadCount = (stats, count) => {
+	let currentCount = 0;
+	return stats.filter((el) => {
+		const res = currentCount <= count;
+		currentCount += el.downloads;
+		return res;
+	});
+};
+
 export const ensurePositiveNumber = (nr) => {
 	if (typeof nr === 'number') {
 		return nr;

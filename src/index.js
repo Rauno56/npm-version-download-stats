@@ -2,7 +2,13 @@ import semver from 'semver';
 import got from 'got';
 import { strict as assert } from 'assert';
 import { parse } from 'node-html-parser';
-import { sumDownloads, sortByDownloads, ensurePositiveNumber, parsePositiveNumber } from './utils.js';
+import {
+	ensurePositiveNumber,
+	limitByTotalDownloadCount,
+	parsePositiveNumber,
+	sortByDownloads,
+	sumDownloads,
+} from './utils.js';
 
 const parseListItem = (htmlElement) => {
 	const time = htmlElement.querySelector('time')?.getAttribute('dateTime');
@@ -99,6 +105,11 @@ export const filter = (stats, options = {}) => {
 	if (options && 'limit' in options) {
 		stats = stats.slice(0, ensurePositiveNumber(options.limit));
 	}
+	if (options && 'limitTotal' in options) {
+		assert(options.limitTotal.endsWith('%'), '"limitTotal" is expected to be an percentage');
+		const required = sum * parsePositiveNumber(options.limitTotal.slice(0, -1), 100) / 100;
+		stats = limitByTotalDownloadCount(stats, required);
+	}
 	return stats;
 };
 export const fetchAndFilter = async (packageName, options) => {
@@ -180,6 +191,16 @@ assert.deepEqual(
 assert.deepEqual(
 	filter([{ downloads: 100 }, { downloads: 10 }], { limit: 0 }),
 	[],
+);
+
+// limitTotal
+assert.deepEqual(
+	filter([{ downloads: 90 }, { downloads: 10 }], { limitTotal: '100%' }),
+	[{ downloads: 90 }, { downloads: 10 }],
+);
+assert.deepEqual(
+	filter([{ downloads: 90 }, { downloads: 10 }], { limitTotal: '89%' }),
+	[{ downloads: 90 }],
 );
 
 

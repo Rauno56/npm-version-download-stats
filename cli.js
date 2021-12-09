@@ -5,7 +5,7 @@ import * as util from 'util';
 import getStats, { filter } from './src/index.js';
 import { sumDownloads } from './src/utils.js';
 
-const [,, PACKAGE] = process.argv;
+const [,, PACKAGE, semverRange] = process.argv;
 assert.equal(typeof PACKAGE, 'string', 'Package name required');
 
 const round = (val, dec = 0) => {
@@ -19,7 +19,7 @@ const sum = sumDownloads(stats);
 stats = stats.map((entry) => {
 		return {
 			...entry,
-			get ratio() {
+			get 'ratio(%)'() {
 				return round(100 * entry.downloads / sum, 1);
 			}
 		}
@@ -27,12 +27,10 @@ stats = stats.map((entry) => {
 
 const show = (subset, totalSum) => {
 	const tableSum = sumDownloads(subset);
-	console.table(
-		subset,
-	);
+	console.table(subset);
 
 	console.log(`Ratio of downloads through versions shown in the table: ${round(100 * tableSum / totalSum, 2)}%`);
 	console.log(`Total weekly downloads: ${totalSum.toLocaleString('en-US')}`);
 };
 
-show(filter(stats, { min: '2%', limit: 20 }), sum);
+show(filter(stats, { semverRange }), sum);
