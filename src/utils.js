@@ -43,3 +43,12 @@ export const parsePositiveNumber = (nr, upperBound = Infinity) => {
 
 	return nr;
 };
+
+export const reverseObject = (obj) => {
+	return Object.entries(obj)
+		.reduce((acc, [value, key]) => {
+			acc[key] = acc[key] || [];
+			acc[key].push(value);
+			return acc;
+		}, {});
+};

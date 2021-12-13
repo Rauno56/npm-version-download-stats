@@ -2,6 +2,7 @@ import semver from 'semver';
 import got from 'got';
 import { strict as assert } from 'assert';
 import { parse } from 'node-html-parser';
+import vm from 'vm';
 import {
 	ensurePositiveNumber,
 	isStringOrNumber,
@@ -9,6 +10,7 @@ import {
 	parsePositiveNumber,
 	sortByDownloads,
 	sumDownloads,
+	reverseObject,
 } from './utils.js';
 
 const parseListItem = (htmlElement) => {
@@ -24,10 +26,8 @@ const parseListItem = (htmlElement) => {
 		isTagEntry: !!tag,
 	};
 };
-const fetch = async (packageName) => {
-	assert(packageName, 'Package name required');
-	const { body } = await got(`https://www.npmjs.com/package/${packageName}?activeTab=versions`);
-	const root = parse(body).querySelectorAll('#tabpanel-versions > div > ul > li');
+const parseFromHtml = (parsedBody) => {
+	const root = parsedBody.querySelectorAll('#tabpanel-versions > div > ul > li');
 	const tags = new Map();
 	const stats = root.map((el) => {
 		const parsed = parseListItem(el);
@@ -69,6 +69,43 @@ const fetch = async (packageName) => {
 
 	return stats;
 };
+const fromJsonData = (parsedBody) => {
+	const root = parsedBody.querySelector('script[integrity]');
+	const script = new vm.Script(root.rawText);
+	const context = { window: {} };
+	script.runInNewContext(context);
+	const data = context.window.__context__?.context;
+	const downloads = data?.versionsDownloads ?? {};
+	const tags = reverseObject(data?.packument?.distTags || {});
+
+	return (data?.packument?.versions || [])
+		.map(({ version, date, dist, deprecated, ...el }) => {
+			return {
+				version,
+				isDeprecated: !!deprecated,
+				time: new Date(date.ts),
+				tags: tags[version] ?? [],
+				downloads: downloads[version] ?? 0,
+			}
+		});
+};
+const fetch = async (packageName) => {
+	assert(packageName, 'Package name required');
+	console.error('Fetching stats for', packageName);
+	const { body } = await got(`https://www.npmjs.com/package/${packageName}?activeTab=versions`);
+	const root = parse(body);
+	const fromJson = fromJsonData(root);
+	if (fromJson && fromJson.length) {
+		return fromJson;
+	}
+	// fall back to parsing from HTML
+	const fromHtml = parseFromHtml(root);
+	if (fromHtml && fromHtml.length) {
+		return fromHtml;
+	}
+	console.error('failed to parse');
+	return [];
+};
 
 const minFilterGen = (minimum, totalSum) => {
 	if (!minimum) {
@@ -92,6 +129,9 @@ export const filter = (stats, options = {}) => {
 	const minFilter = minFilterGen(options?.min, sum);
 
 	stats = stats.filter((el) => {
+		if (!options?.showDeprecated && el.isDeprecated) {
+			return false;
+		}
 		if (options?.semverRange && !semver.satisfies(el.version, options.semverRange)) {
 			return false;
 		}
@@ -117,6 +157,15 @@ export const fetchAndFilter = async (packageName, options) => {
 	return filter(await fetch(packageName), options);
 };
 
+// reverseObject
+assert.deepEqual(
+	reverseObject({ a: 'b', c: 'd' }),
+	{ b: ['a'], d: ['c'] }
+);
+assert.deepEqual(
+	reverseObject({ a: 'b', c: 'd' , e: 'b' }),
+	{ b: ['a', 'e'], d: ['c'] }
+);
 
 // semver check
 assert.deepEqual(
@@ -144,6 +193,20 @@ assert.deepEqual(
 assert.deepEqual(
 	filter([{ downloads: 10 }, { downloads: 100 }], { sort: false }),
 	[{ downloads: 10 }, { downloads: 100 }],
+);
+
+// showDeprecated
+assert.deepEqual(
+	filter([{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }]),
+	[{ downloads: 100 }, { downloads: 1, isDeprecated: false }],
+);
+assert.deepEqual(
+	filter([{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }], { showDeprecated: true }),
+	[{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }],
+);
+assert.deepEqual(
+	filter([{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }], { showDeprecated: false }),
+	[{ downloads: 100 }, { downloads: 1, isDeprecated: false }],
 );
 
 // minFilterGen
