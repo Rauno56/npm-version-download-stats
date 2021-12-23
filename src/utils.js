@@ -1,3 +1,4 @@
+import parser from 'yargs-parser'
 import { strict as assert } from 'assert';
 
 export const isStringOrNumber = (value) => {
@@ -51,4 +52,58 @@ export const reverseObject = (obj) => {
 			acc[key].push(value);
 			return acc;
 		}, {});
+};
+
+export const parseCliArgs = () => {
+	const opts = parser(process.argv.slice(2), {
+		alias: {
+			showDeprecated: ['deprecated'],
+		},
+		boolean: [
+			'showDeprecated',
+		],
+		string: [
+			'limitTotal',
+			'limit',
+			'min',
+		],
+		default: {
+			showDeprecated: true,
+		},
+		configuration: {
+			// remove duplicate key-value pairs from the resulting object
+			'strip-dashed': true,
+			'strip-aliased': true,
+			// to avoid positional args to be parsed into numbers. semver lib doesn't like literal 1.
+			'parse-positional-numbers': false,
+		},
+	});
+	const {
+		_,
+		limit,
+		min,
+		limitTotal,
+		showDeprecated,
+		...rest
+	} = opts;
+	const restKeys = Object.keys(rest);
+
+	if (restKeys.length) {
+		throw new Error(`Unrecognized option${restKeys.length > 1 ? 's' : ''}: ${restKeys.join(', ')}.`);
+	}
+
+	const [packageName, semverRange] = _;
+	return {
+		packageName,
+		semverRange,
+		limit,
+		min,
+		limitTotal,
+		showDeprecated,
+	};
+};
+
+export const round = (val, dec = 0) => {
+	const m = Math.pow(10, dec);
+	return Math.round((val + Number.EPSILON) * m) / m;
 };
