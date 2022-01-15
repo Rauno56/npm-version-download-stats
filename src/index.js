@@ -4,14 +4,23 @@ import { strict as assert } from 'assert';
 import { parse } from 'node-html-parser';
 import vm from 'vm';
 import {
+	assertOneOf,
 	ensurePositiveNumber,
 	isStringOrNumber,
 	limitByTotalDownloadCount,
 	parsePositiveNumber,
-	sortByDownloads,
-	sumDownloads,
 	reverseObject,
+	sortByDownloads,
+	sortByTime,
+	sortByVersion,
+	sumDownloads,
 } from './utils.js';
+
+const sorters = {
+	downloads: sortByDownloads,
+	time: sortByTime,
+	version: sortByVersion,
+};
 
 const parseListItem = (htmlElement) => {
 	const time = htmlElement.querySelector('time')?.getAttribute('dateTime');
@@ -126,13 +135,13 @@ const minFilterGen = (minimum, totalSum) => {
 };
 export const filter = (stats, options = {}) => {
 	const sum = sumDownloads(stats);
-	const minFilter = minFilterGen(options?.min, sum);
+	const minFilter = minFilterGen(options.min, sum);
 
 	stats = stats.filter((el) => {
-		if (!options?.showDeprecated && el.isDeprecated) {
+		if (!options.showDeprecated && el.isDeprecated) {
 			return false;
 		}
-		if (options?.semverRange && !semver.satisfies(el.version, options.semverRange)) {
+		if (options.semverRange && !semver.satisfies(el.version, options.semverRange)) {
 			return false;
 		}
 		if (minFilter && !minFilter(el)) {
@@ -140,13 +149,16 @@ export const filter = (stats, options = {}) => {
 		}
 		return true;
 	});
-	if (options?.sort ?? true) {
-		stats.sort(sortByDownloads);
+
+	options.sort = options.sort ?? 'downloads';
+	if (options.sort) {
+		assertOneOf(options.sort, Object.keys(sorters));
+		stats.sort(sorters[options.sort]);
 	}
-	if (isStringOrNumber(options?.limit)) {
+	if (isStringOrNumber(options.limit)) {
 		stats = stats.slice(0, ensurePositiveNumber(options.limit));
 	}
-	if (isStringOrNumber(options?.limitTotal)) {
+	if (isStringOrNumber(options.limitTotal)) {
 		assert(options.limitTotal.endsWith('%'), '"limitTotal" is expected to be an percentage');
 		const required = sum * parsePositiveNumber(options.limitTotal.slice(0, -1), 100) / 100;
 		stats = limitByTotalDownloadCount(stats, required);
@@ -187,8 +199,12 @@ assert.deepEqual(
 	[{ downloads: 100 }, { downloads: 10 }],
 );
 assert.deepEqual(
-	filter([{ downloads: 10 }, { downloads: 100 }], { sort: true }),
+	filter([{ downloads: 10 }, { downloads: 100 }], { sort: 'downloads' }),
 	[{ downloads: 100 }, { downloads: 10 }],
+);
+assert.deepEqual(
+	filter([{ version: '1.2.3', downloads: 100 }, { version: '2.2.4', downloads: 10 }], { sort: 'version' }),
+	[{ version: '2.2.4', downloads: 10 }, { version: '1.2.3', downloads: 100 }],
 );
 assert.deepEqual(
 	filter([{ downloads: 10 }, { downloads: 100 }], { sort: false }),

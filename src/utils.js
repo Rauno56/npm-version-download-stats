@@ -1,5 +1,7 @@
 import parser from 'yargs-parser'
 import { strict as assert } from 'assert';
+import util from 'util';
+import semver from 'semver';
 
 export const isStringOrNumber = (value) => {
 	if (typeof value === 'string') return true;
@@ -9,6 +11,14 @@ export const isStringOrNumber = (value) => {
 
 export const sortByDownloads = (a, b) => {
 	return a.downloads > b.downloads ? -1 : 1;
+};
+
+export const sortByTime = (a, b) => {
+	return a.time > b.time ? -1 : 1;
+};
+
+export const sortByVersion = (a, b) => {
+	return semver.gt(a.version, b.version) ? -1 : 1;
 };
 
 export const sumDownloads = (stats) => {
@@ -54,6 +64,10 @@ export const reverseObject = (obj) => {
 		}, {});
 };
 
+export const assertOneOf = (value, options) => {
+	assert(options.includes(value), `Expected ${util.inspect(value)} to be one of ${util.inspect(options)}`);
+};
+
 export const parseCliArgs = () => {
 	const opts = parser(process.argv.slice(2), {
 		alias: {
@@ -63,27 +77,29 @@ export const parseCliArgs = () => {
 			'showDeprecated',
 		],
 		string: [
-			'limitTotal',
 			'limit',
+			'limitTotal',
 			'min',
+			'sort',
 		],
 		default: {
 			showDeprecated: true,
 		},
 		configuration: {
-			// remove duplicate key-value pairs from the resulting object
-			'strip-dashed': true,
-			'strip-aliased': true,
 			// to avoid positional args to be parsed into numbers. semver lib doesn't like literal 1.
 			'parse-positional-numbers': false,
+			// remove duplicate key-value pairs from the resulting object
+			'strip-aliased': true,
+			'strip-dashed': true,
 		},
 	});
 	const {
 		_,
 		limit,
-		min,
 		limitTotal,
+		min,
 		showDeprecated,
+		sort,
 		...rest
 	} = opts;
 	const restKeys = Object.keys(rest);
@@ -94,12 +110,13 @@ export const parseCliArgs = () => {
 
 	const [packageName, semverRange] = _;
 	return {
+		limit,
+		limitTotal,
+		min,
 		packageName,
 		semverRange,
-		limit,
-		min,
-		limitTotal,
 		showDeprecated,
+		sort,
 	};
 };
 
