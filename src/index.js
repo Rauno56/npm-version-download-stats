@@ -101,6 +101,7 @@ const fromJsonData = (parsedBody) => {
 const fetch = async (packageName) => {
 	assert(packageName, 'Package name required');
 	console.error('Fetching stats for', packageName);
+	// use https://www.npmjs.com/package/pacote instead
 	const { body } = await got(`https://www.npmjs.com/package/${packageName}?activeTab=versions`);
 	const root = parse(body);
 	const fromJson = fromJsonData(root);
