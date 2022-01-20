@@ -95,7 +95,7 @@ const fromJsonData = (parsedBody) => {
 				time: new Date(date.ts),
 				tags: tags[version] ?? [],
 				downloads: downloads[version] ?? 0,
-			}
+			};
 		});
 };
 const fetch = async (packageName) => {
@@ -116,7 +116,7 @@ const fetch = async (packageName) => {
 	return [];
 };
 
-const minFilterGen = (minimum, totalSum) => {
+export const minFilterGen = (minimum, totalSum) => {
 	if (!minimum) {
 		return null;
 	}
@@ -168,120 +168,5 @@ export const filter = (stats, options = {}) => {
 export const fetchAndFilter = async (packageName, options) => {
 	return filter(await fetch(packageName), options);
 };
-
-// reverseObject
-assert.deepEqual(
-	reverseObject({ a: 'b', c: 'd' }),
-	{ b: ['a'], d: ['c'] }
-);
-assert.deepEqual(
-	reverseObject({ a: 'b', c: 'd' , e: 'b' }),
-	{ b: ['a', 'e'], d: ['c'] }
-);
-
-// semver check
-assert.deepEqual(
-	filter([{ version: '1.2.3' }, { version: '2.2.4' }]),
-	[{ version: '1.2.3' }, { version: '2.2.4' }],
-);
-assert.deepEqual(
-	filter([{ version: '1.2.3' }, { version: '2.2.4' }], { semverRange: '1' }),
-	[{ version: '1.2.3' }],
-);
-assert.deepEqual(
-	filter([{ version: '1.2.3' }, { version: '2.2.4' }], { semverRange: '1.2.3 || 2.2.4' }),
-	[{ version: '1.2.3' }, { version: '2.2.4' }],
-);
-
-// sort
-assert.deepEqual(
-	filter([{ downloads: 10 }, { downloads: 100 }]),
-	[{ downloads: 100 }, { downloads: 10 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 10 }, { downloads: 100 }], { sort: 'downloads' }),
-	[{ downloads: 100 }, { downloads: 10 }],
-);
-assert.deepEqual(
-	filter([{ version: '1.2.3', downloads: 100 }, { version: '2.2.4', downloads: 10 }], { sort: 'version' }),
-	[{ version: '2.2.4', downloads: 10 }, { version: '1.2.3', downloads: 100 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 10 }, { downloads: 100 }], { sort: false }),
-	[{ downloads: 10 }, { downloads: 100 }],
-);
-
-// showDeprecated
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }]),
-	[{ downloads: 100 }, { downloads: 1, isDeprecated: false }],
-);
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }], { showDeprecated: true }),
-	[{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }],
-);
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10, isDeprecated: true }, { downloads: 1, isDeprecated: false }], { showDeprecated: false }),
-	[{ downloads: 100 }, { downloads: 1, isDeprecated: false }],
-);
-
-// minFilterGen
-assert.equal(minFilterGen(), null);
-assert.equal(minFilterGen(10)({ downloads: 11 }), true);
-assert.equal(minFilterGen(10)({ downloads: 10 }), true);
-assert.equal(minFilterGen(10)({ downloads:  9 }), false);
-assert.equal(minFilterGen('10')({ downloads: 11 }), true);
-assert.equal(minFilterGen('10')({ downloads: 10 }), true);
-assert.equal(minFilterGen('10')({ downloads:  9 }), false);
-assert.equal(minFilterGen('10%', 100)({ downloads: 11 }), true);
-assert.equal(minFilterGen('10%', 100)({ downloads: 10 }), true);
-assert.equal(minFilterGen('10%', 100)({ downloads:  9 }), false);
-
-assert.equal(minFilterGen('10.1%', 999)({ downloads: 102 }), true);
-assert.equal(minFilterGen('10.1%', 999)({ downloads: 101 }), true);
-assert.equal(minFilterGen('10.1%', 999)({ downloads: 100 }), false);
-
-assert.throws(() => minFilterGen('110%', 100), /bound/);
-assert.throws(() => minFilterGen('-10', 100), /negative/);
-assert.throws(() => minFilterGen('-10%', 100), /negative/);
-
-// min nr
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10 }], { min: 12 }),
-	[{ downloads: 100 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10 }], { min: '12' }),
-	[{ downloads: 100 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10 }], { min: '10%' }),
-	[{ downloads: 100 }],
-);
-
-// limit
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10 }], { limit: 3 }),
-	[{ downloads: 100 }, { downloads: 10 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10 }], { limit: 1 }),
-	[{ downloads: 100 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 100 }, { downloads: 10 }], { limit: 0 }),
-	[],
-);
-
-// limitTotal
-assert.deepEqual(
-	filter([{ downloads: 90 }, { downloads: 10 }], { limitTotal: '100%' }),
-	[{ downloads: 90 }, { downloads: 10 }],
-);
-assert.deepEqual(
-	filter([{ downloads: 90 }, { downloads: 10 }], { limitTotal: '89%' }),
-	[{ downloads: 90 }],
-);
-
 
 export default fetch;

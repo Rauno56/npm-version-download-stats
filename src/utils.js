@@ -1,4 +1,4 @@
-import parser from 'yargs-parser'
+import parser from 'yargs-parser';
 import { strict as assert } from 'assert';
 import util from 'util';
 import semver from 'semver';

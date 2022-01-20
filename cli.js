@@ -13,16 +13,16 @@ const options = parseCliArgs();
 assert.equal(typeof options.packageName, 'string', 'Package name required');
 
 console.log(`Loading stats for ${options.packageName}`);
-let stats = (await getStats(options.packageName))
+let stats = (await getStats(options.packageName));
 const sum = sumDownloads(stats);
 stats = stats.map((entry) => {
-		return {
-			...entry,
-			get 'ratio(%)'() {
-				return round(100 * entry.downloads / sum, 1);
-			}
+	return {
+		...entry,
+		get 'ratio(%)'() {
+			return round(100 * entry.downloads / sum, 1);
 		}
-	});
+	};
+});
 
 const show = (subset, totalSum) => {
 	const tableSum = sumDownloads(subset);
